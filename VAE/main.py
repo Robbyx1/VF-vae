@@ -56,6 +56,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision.utils import save_image
+from plot import plot_hvf, plot_all_reconstructions
 import os
 
 from vae_model import VAE
@@ -103,6 +104,19 @@ optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 # Main training and testing loop
 if __name__ == "__main__":
+    # for epoch in range(1, args.epochs + 1):
+    #     train(model, device, train_loader, optimizer, epoch, args.log_interval)
+    #     test(model, device, test_loader, epoch)
+    originals = None
+    reconstructions = {i: [] for i in range(10)}  # Assuming 10 test cases as an example
+    results_dir = 'results_vae_11*10'
+    os.makedirs(results_dir, exist_ok=True)  # Ensure the results directory is created
+
     for epoch in range(1, args.epochs + 1):
         train(model, device, train_loader, optimizer, epoch, args.log_interval)
-        test(model, device, test_loader, epoch)
+        originals = test(model, device, test_loader, epoch, reconstructions, originals, results_dir)
+
+    if originals is not None:
+        plot_all_reconstructions(originals, reconstructions, args.epochs, results_dir)
+    else:
+        print("Error: Original data not captured correctly.")

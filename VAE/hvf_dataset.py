@@ -15,6 +15,8 @@ class HVFDataset(Dataset):
                    eye_data = patient_data[eye_key]
                    for record in eye_data:
                        if 'td_seq' in record:
+                           # record['td_seq'][25] = 0  # Adjust for 0-indexed list
+                           # record['td_seq'][34] = 0
                            self.sequences.append(record['td_seq'])
                            # print(
                            #     f"Loading {patient_id}-{eye_key}: {record['td_seq'][:5]}...")  # Prints first 5 items
