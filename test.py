@@ -6,6 +6,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
+import os
 
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
@@ -114,6 +115,9 @@ def train(epoch):
 def test(epoch):
     model.eval()
     test_loss = 0
+
+    results_dir = 'results'
+    os.makedirs(results_dir, exist_ok=True)
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
@@ -124,7 +128,9 @@ def test(epoch):
                 comparison = torch.cat([data[:n],
                                       recon_batch.view(args.batch_size, 1, 28, 28)[:n]])
                 save_image(comparison.cpu(),
-                         'results/reconstruction_' + str(epoch) + '.png', nrow=n)
+                         # 'results/reconstruction_' + str(epoch) + '.png', nrow=n)
+                os.path.join(results_dir, 'reconstruction_' + str(epoch) + '.png'), nrow = n)
+
 
     test_loss /= len(test_loader.dataset)
     print('====> Test set loss: {:.4f}'.format(test_loss))
