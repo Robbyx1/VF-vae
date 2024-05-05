@@ -19,12 +19,27 @@ class HVFDataset(Dataset):
                            # print(
                            #     f"Loading {patient_id}-{eye_key}: {record['td_seq'][:5]}...")  # Prints first 5 items
 
+       all_data = torch.tensor(self.sequences, dtype=torch.float32)
+       self.mean = all_data.mean(dim=0)
+       self.std = all_data.std(dim=0)
+       self.std[self.std == 0] = 1  # Prevent division by zero
+       self.min = all_data.min()
+       self.max = all_data.max()
+
    def __len__(self):
        return len(self.sequences)
 
    def __getitem__(self, idx):
-       return torch.tensor(self.sequences[idx], dtype=torch.float32)
-       # return self.sequences[idx]
+       sequence_tensor = torch.tensor(self.sequences[idx], dtype=torch.float32)
+       # # Normalize the data[0,1]
+       # normalized_data = (sequence_tensor - self.min) / (self.max - self.min)
+       # return normalized_data
+
+       normalized_data = (torch.tensor(self.sequences[idx], dtype=torch.float32) - self.mean) / self.std
+       return normalized_data
+
+       # return torch.tensor(self.sequences[idx], dtype=torch.float32)
+
 
 
 
