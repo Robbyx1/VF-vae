@@ -8,6 +8,7 @@ import numpy as np
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
     # Ensure that the shape of x in loss calculations is properly handled
+    # MSE = F.mse_loss(recon_x, x, reduction='sum')
     BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return BCE + KLD
@@ -33,27 +34,6 @@ def train(model, device, train_loader, optimizer, epoch, log_interval):
     print(f'====> Epoch: {epoch} Average loss: {train_loss / len(train_loader.dataset):.4f}')
 
 
-# def test(model, device, test_loader, epoch, reconstructions, originals, results_dir='results_vae_10', num_cases=10):
-#     print(f"Testing epoch {epoch}")
-#     model.eval()
-#     test_loss = 0
-#
-#     with torch.no_grad():
-#         for i, data in enumerate(test_loader):
-#             data = data.to(device)
-#             recon_batch, mu, logvar = model(data)
-#             test_loss += loss_function(recon_batch, data, mu, logvar).item()
-#
-#             if i == 0:  # Process only the first batch
-#                 for j in range(num_cases):
-#                     reconstructions[j].append(recon_batch[j].cpu().numpy())
-#                 if epoch == 10 and originals is None:  # Capture originals once
-#                     originals = data[:num_cases, :54].cpu().numpy()
-#                     print(f"Originals captured: {originals.shape}")
-#
-#     test_loss /= len(test_loader.dataset)
-#     print(f'====> Test set loss: {test_loss:.4f}')
-#     return originals
 def test(model, device, test_loader, epoch, reconstructions, originals,input_o, results_dir='results_vae_10', num_cases=10):
     print(f"Testing epoch {epoch}")
     model.eval()
@@ -76,3 +56,39 @@ def test(model, device, test_loader, epoch, reconstructions, originals,input_o, 
     test_loss /= len(test_loader.dataset)
     print(f'====> Test set loss: {test_loss:.4f}')
     return originals, input_o
+
+# def test(model, device, test_loader, results_dir='results_vae_10', num_cases=10):
+#     print("Testing...")
+#     model.eval()
+#     test_loss = 0
+#     case_data = []  # To store (loss, input, target, reconstruction) tuples
+#
+#     with torch.no_grad():
+#         for inputs, targets in test_loader:
+#             inputs, targets = inputs.to(device), targets.to(device)
+#             recon_batch, mu, logvar = model(inputs)
+#             batch_loss = loss_function(recon_batch, targets, mu, logvar).item()
+#             test_loss += batch_loss
+#
+#             # Save data for each item in the batch
+#             for input_sample, target_sample, recon_sample in zip(inputs, targets, recon_batch):
+#                 loss_per_sample = loss_function(recon_sample.unsqueeze(0), target_sample.unsqueeze(0), mu, logvar).item()
+#                 case_data.append((loss_per_sample, input_sample.cpu().numpy(), target_sample.cpu().numpy(), recon_sample.cpu().numpy()))
+#
+#     # Now find the top ten cases with the lowest loss
+#     case_data.sort(key=lambda x: x[0])  # Sort by loss
+#     top_cases = case_data[:num_cases]  # Select top ten cases
+#
+#     # Separate data for easy access
+#     input_o = np.array([x[1] for x in top_cases])
+#     originals = np.array([x[2] for x in top_cases])
+#     reconstructions = {i: [x[3]] for i, x in enumerate(top_cases)}
+#
+#     test_loss /= len(test_loader.dataset)
+#     print(f'====> Test set loss: {test_loss:.4f}')
+#     return originals, input_o, reconstructions
+
+
+
+
+

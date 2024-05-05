@@ -34,10 +34,10 @@ class HVFDataset(Dataset):
    def __getitem__(self, idx):
        sequence_tensor = torch.tensor(self.sequences[idx], dtype=torch.float32)
        # # Normalize the data[0,1]
-       # normalized_data = (sequence_tensor - self.min) / (self.max - self.min)
-       # return normalized_data
+       normalized_data = (sequence_tensor - self.min) / (self.max - self.min)
 
-       normalized_data = (torch.tensor(self.sequences[idx], dtype=torch.float32) - self.mean) / self.std
+
+       # normalized_data = (torch.tensor(self.sequences[idx], dtype=torch.float32) - self.mean) / self.std
        return normalized_data
 
        # return torch.tensor(self.sequences[idx], dtype=torch.float32)

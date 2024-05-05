@@ -55,12 +55,14 @@ if __name__ == "__main__":
     originals = None
     input_o = None
     reconstructions = {i: [] for i in range(10)}  # Assuming 10 test cases as an example
-    results_dir = 'results_seq_vae_11*10'
+    results_dir = 'results_seq_vae_12*10'
     os.makedirs(results_dir, exist_ok=True)  # Ensure the results directory is created
 
     for epoch in range(1, args.epochs + 1):
         train(model, device, train_loader, optimizer, epoch, args.log_interval)
         originals, input_o = test(model, device, test_loader, epoch, reconstructions, originals,input_o, results_dir)
+        # originals, input_o, reconstructions = test(model, device, test_loader, results_dir, num_cases=10)
+
 
     if originals is not None:
         plot_all_reconstructions(originals, reconstructions,input_o, args.epochs, results_dir)
