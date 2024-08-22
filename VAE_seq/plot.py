@@ -115,36 +115,86 @@ def plot_hvf(original, reconstruction, epoch, batch_index, results_dir):
 #     plt.savefig(os.path.join(results_dir, f'comparison_grid_epoch{epoch}.png'))
 #     plt.close()
 
+# def plot_all_reconstructions(originals, reconstructions, inputs, epoch, results_dir):
+#     num_cases = len(originals)
+#     num_epochs = len(reconstructions[0])
+#     fig, axes = plt.subplots(num_cases, num_epochs + 2, figsize=(24, 20))  # Plus two for the original and input
+#
+#     for i in range(num_cases):
+#         for e in range(num_epochs):
+#             recon_img = transform_to_image(reconstructions[i][e])
+#             axes[i, e].imshow(recon_img, cmap='gray', interpolation='none')
+#             axes[i, e].axis('off')
+#             if i == 0:  # Add titles only to the first row
+#                 axes[i, e].set_title(f'Epoch {e + 1}')
+#
+#         # Plot and title original in the second last column
+#         orig_img = transform_to_image(originals[i])
+#         axes[i, num_epochs].imshow(orig_img, cmap='gray', interpolation='none')
+#         axes[i, num_epochs].axis('off')
+#         if i == 0:
+#             axes[i, num_epochs].set_title('Target')
+#
+#         # Plot and title input in the last column
+#         input_img = transform_to_image(inputs[i])
+#         axes[i, num_epochs + 1].imshow(input_img, cmap='gray', interpolation='none')
+#         axes[i, num_epochs + 1].axis('off')
+#         if i == 0:
+#             axes[i, num_epochs + 1].set_title('Input_o')
+#
+#     plt.tight_layout()
+#     plt.savefig(os.path.join(results_dir, f'comparison_grid_epoch{epoch}.png'))
+#     plt.close()
+
 def plot_all_reconstructions(originals, reconstructions, inputs, epoch, results_dir):
     num_cases = len(originals)
     num_epochs = len(reconstructions[0])
-    fig, axes = plt.subplots(num_cases, num_epochs + 2, figsize=(24, 20))  # Plus two for the original and input
+    fig, axes = plt.subplots(num_epochs + 2, num_cases, figsize=(num_cases * 2.5, num_epochs * 2.5 + 5))  # Adding extra rows for the original and input
 
-    for i in range(num_cases):
-        for e in range(num_epochs):
-            recon_img = transform_to_image(reconstructions[i][e])
-            axes[i, e].imshow(recon_img, cmap='gray', interpolation='none')
-            axes[i, e].axis('off')
-            if i == 0:  # Add titles only to the first row
-                axes[i, e].set_title(f'Epoch {e + 1}')
+    for j in range(num_cases):
+        for i in range(num_epochs):
+            recon_img = transform_to_image(reconstructions[j][i])
+            axes[i, j].imshow(recon_img, cmap='gray', interpolation='none')
+            axes[i, j].axis('off')
+            if j == 0:  # Set row names for epochs at the first column
+                axes[i, j].set_ylabel(f'Epoch {i + 1}')
 
-        # Plot and title original in the second last column
-        orig_img = transform_to_image(originals[i])
-        axes[i, num_epochs].imshow(orig_img, cmap='gray', interpolation='none')
-        axes[i, num_epochs].axis('off')
-        if i == 0:
-            axes[i, num_epochs].set_title('Target')
+        # Plot original in the second last row
+        orig_img = transform_to_image(originals[j])
+        axes[num_epochs, j].imshow(orig_img, cmap='gray', interpolation='none')
+        axes[num_epochs, j].axis('off')
+        if j == 0:  # Set row name for the original
+            axes[num_epochs, j].set_ylabel('Target')
 
-        # Plot and title input in the last column
-        input_img = transform_to_image(inputs[i])
-        axes[i, num_epochs + 1].imshow(input_img, cmap='gray', interpolation='none')
-        axes[i, num_epochs + 1].axis('off')
-        if i == 0:
-            axes[i, num_epochs + 1].set_title('Input_o')
+        # Plot input in the last row
+        input_img = transform_to_image(inputs[j])
+        axes[num_epochs + 1, j].imshow(input_img, cmap='gray', interpolation='none')
+        axes[num_epochs + 1, j].axis('off')
+        if j == 0:  # Set row name for the input
+            axes[num_epochs + 1, j].set_ylabel('Input_o')
 
     plt.tight_layout()
     plt.savefig(os.path.join(results_dir, f'comparison_grid_epoch{epoch}.png'))
     plt.close()
+
+
+def save_loss_plot(train_losses, title, results_dir='loss'):
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label='MAE Loss')
+    plt.title(title)
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+
+    plt.savefig(os.path.join(results_dir, 'loss.png'))
+    plt.close()
+    print("loss printed")
+
 if __name__ == "__main__":
     test_data_original = np.random.normal(loc=-2.0, scale=5.0, size=54)
     test_data_reconstructed = np.random.normal(loc=-2.0, scale=5.0, size=54)

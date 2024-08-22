@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch
+from config import init_mask as mask
 
 
 
@@ -52,51 +53,6 @@ def plot_hvf(original, reconstruction, epoch, batch_index, results_dir):
     plt.savefig(os.path.join(results_dir, f'comparison_epoch{epoch}_batch{batch_index}_ori.png'))
     plt.close()
 
-# def plot_all_reconstructions(originals, reconstructions, epoch, results_dir):
-#     num_cases = len(originals)
-#     num_epochs = len(reconstructions[0])
-#     fig, axes = plt.subplots(num_cases, num_epochs + 1, figsize=(22, 20))  # Plus one for the original
-#
-#     for i in range(num_cases):
-#         for e in range(num_epochs):
-#             recon_img = transform_to_image(reconstructions[i][e])
-#             axes[i, e].imshow(recon_img, cmap='gray', interpolation='none')
-#             axes[i, e].axis('off')
-#
-#         # Plot original in the last column
-#         orig_img = transform_to_image(originals[i])
-#         axes[i, num_epochs].imshow(orig_img, cmap='gray', interpolation='none')
-#         axes[i, num_epochs].axis('off')
-#
-#     plt.tight_layout()
-#     plt.savefig(os.path.join(results_dir, f'comparison_grid_epoch{epoch}.png'))
-#     plt.close()
-
-
-# def plot_all_reconstructions(originals, reconstructions, epoch, results_dir):
-#     num_cases = len(originals)
-#     num_epochs = len(reconstructions[0])
-#     fig, axes = plt.subplots(num_cases, num_epochs + 1, figsize=(22, 20))  # Plus one for the original
-#
-#     # Set titles for each subplot
-#     for e in range(num_epochs):
-#         axes[0, e].set_title(f'Epoch {e+1}')
-#     axes[0, num_epochs].set_title('Original')
-#
-#     for i in range(num_cases):
-#         for e in range(num_epochs):
-#             recon_img = transform_to_image(reconstructions[i][e])
-#             axes[i, e].imshow(recon_img, cmap='gray', interpolation='none')
-#             axes[i, e].axis('off')
-#
-#         # Plot original in the last column
-#         orig_img = transform_to_image(originals[i])
-#         axes[i, num_epochs].imshow(orig_img, cmap='gray', interpolation='none')
-#         axes[i, num_epochs].axis('off')
-#
-#     plt.tight_layout()
-#     plt.savefig(os.path.join(results_dir, f'comparison_grid_epoch{epoch}.png'))
-#     plt.close()
 
 def plot_all_reconstructions(originals, reconstructions, epoch, results_dir):
     num_cases = len(originals)
@@ -180,7 +136,7 @@ def save_loss_plot(train_losses, title, results_dir='loss'):
 
     # Create the plot
     plt.figure(figsize=(10, 6))
-    plt.plot(train_losses, label='BCE + KDL Loss')
+    plt.plot(train_losses, label='MAE + KDL Loss')
     plt.title(title)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
@@ -190,6 +146,67 @@ def save_loss_plot(train_losses, title, results_dir='loss'):
     plt.savefig(os.path.join(results_dir, 'loss.png'))
     plt.close()
     print("loss printed")
+
+# def plot_comparison(originals, reconstructions, results_dir='results_vae_comparisons'):
+#     if not os.path.exists(results_dir):
+#         os.makedirs(results_dir)
+#     num_samples = min(len(originals), len(reconstructions))
+#     fig, axes = plt.subplots(num_samples, 2, figsize=(10, 5 * num_samples))  # Two columns: one for original and one for reconstruction
+#
+#     for i in range(num_samples):
+#         # Ensure data is squeezed of any singleton dimensions
+#         original_img = np.squeeze(originals[i])
+#         reconstruction_img = np.squeeze(reconstructions[i])
+#
+#         # Plot original data
+#         ax = axes[i, 0]
+#         ax.imshow(original_img, cmap='gray', interpolation='none')
+#         ax.set_title(f'Original {i + 1}')
+#         ax.axis('off')
+#
+#         # Plot reconstructed data
+#         ax = axes[i, 1]
+#         ax.imshow(reconstruction_img, cmap='gray', interpolation='none')
+#         ax.set_title(f'Reconstruction {i + 1}')
+#         ax.axis('off')
+#
+#     plt.tight_layout()
+#     plt.savefig(os.path.join(results_dir, 'comparison.png'))
+#     plt.close()
+
+def plot_comparison(originals, reconstructions, mask, num_samples=5, results_dir='results_comparison'):
+    import os
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    fig, axs = plt.subplots(num_samples, 2, figsize=(10, 5 * num_samples))  # 2 columns for original and reconstructed
+    mask = mask.cpu().numpy()  # Convert mask to numpy array once
+    for i in range(num_samples):
+        original_img = originals[i].squeeze()
+        reconstruction_img = reconstructions[i][-1].squeeze()  # Assuming last epoch's reconstruction
+
+        # Apply the mask
+        original_display = np.where(mask == 1, original_img, np.nan)  # Set masked areas to NaN for original
+        reconstruction_display = np.where(mask == 1, reconstruction_img, np.nan)  # Set masked areas to NaN for reconstruction
+
+        # Plot original data
+        axs[i, 0].imshow(original_display, cmap='gray', interpolation='none', vmin=np.nanmin(original_display), vmax=np.nanmax(original_display))
+        axs[i, 0].set_title(f'Original Sample {i+1}')
+        axs[i, 0].axis('off')  # Turn off axis
+
+        # Plot reconstructed data
+        axs[i, 1].imshow(reconstruction_display, cmap='gray', interpolation='none', vmin=np.nanmin(reconstruction_display), vmax=np.nanmax(reconstruction_display))
+        axs[i, 1].imshow(reconstruction_display, cmap='gray_r', interpolation='none', vmin=np.nanmin(reconstruction_display), vmax=np.nanmax(reconstruction_display))
+
+        axs[i, 1].set_title(f'Reconstructed Sample {i+1}')
+        axs[i, 1].axis('off')  # Turn off axis
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(results_dir, 'comparison.png'))
+    plt.close()
 
 
 if __name__ == "__main__":

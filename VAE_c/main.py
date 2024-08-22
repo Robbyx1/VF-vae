@@ -1,3 +1,16 @@
+from __future__ import print_function
+import argparse
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader, random_split
+from torchvision.utils import save_image
+from plot import plot_hvf, plot_all_reconstructions, plot_samples, visualize_latent_space, save_loss_plot, plot_comparison
+import os
+from config import init_mask
+from vae_model import VAE
+from train_utils import train, test, sample_from_latent_space, sample_from_latent_space_adjusted
+from hvf_dataset import HVFDataset
+
 # Setup command line arguments
 parser = argparse.ArgumentParser(description='VAE HVF Example')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
@@ -18,12 +31,13 @@ use_mps = not args.no_mps and torch.backends.mps.is_available()
 
 torch.manual_seed(args.seed)
 device = torch.device("cuda" if args.cuda else "mps" if use_mps else "cpu")
+static_mask = init_mask(device)
 
 # Load the full dataset
 full_dataset = HVFDataset('../src/uwhvf/alldata.json')
 
 # Define the size of your test set
-num_test = int(0.2 * len(full_dataset))  # Let's say 20% of the data
+num_test = int(0.2 * len(full_dataset))  #  20% of the data
 num_train = len(full_dataset) - num_test
 
 # Split the dataset
@@ -31,17 +45,18 @@ train_dataset, test_dataset = random_split(full_dataset, [num_train, num_test])
 
 # Setup DataLoaders
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+for i, data in enumerate(train_loader):
+    print(f"Batch {i} shape: {data.shape}")  # data here refers to the batch of images
+    if i == 0:  # Just print the first batch to check
+        break
 test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
 # Initialize the model and optimizer
 model = VAE().to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 # Main training and testing loop
 if __name__ == "__main__":
-    # for epoch in range(1, args.epochs + 1):
-    #     train(model, device, train_loader, optimizer, epoch, args.log_interval)
-    #     test(model, device, test_loader, epoch)
     originals = None
     reconstructions = {i: [] for i in range(10)}  # Assuming 10 test cases as an example
     results_dir = 'results_vae_11*10'
@@ -52,14 +67,10 @@ if __name__ == "__main__":
     latent_std = 0
     total_data_count = 0
 
-    # for epoch in range(1, args.epochs + 1):
-    #     train_loss = train(model, device, train_loader, optimizer, epoch, args.log_interval)
-    #     originals = test(model, device, test_loader, epoch, reconstructions, originals, results_dir)
-    #     train_losses.append(train_loss)
 
     for epoch in range(1, args.epochs + 1):
-        train_loss = train(model, device, train_loader, optimizer, epoch, args.log_interval)
-        originals = test(model, device, test_loader, epoch, reconstructions, originals, results_dir)
+        train_loss = train(model, device, train_loader, optimizer, epoch, args.log_interval, static_mask)
+        originals = test(model, device, test_loader, epoch, reconstructions, originals,static_mask, results_dir)
         train_losses.append(train_loss)
 
         # Reset the sum accumulators and the count at the start of each epoch
@@ -80,24 +91,23 @@ if __name__ == "__main__":
             latent_std = torch.exp(0.5 * latent_logvar / total_data_count)
 
     if originals is not None:
-        plot_all_reconstructions(originals, reconstructions, args.epochs, results_dir)
+        save_loss_plot(train_losses, 'Loss/train')
+        # plot_all_reconstructions(originals, reconstructions, args.epochs, results_dir)
+        plot_comparison(originals,reconstructions,static_mask)
+        num_samples = min(5, len(originals), len(reconstructions))
+
+        print("Displaying first {} samples:".format(num_samples))
+        for i in range(num_samples):
+            print(f"Sample {i + 1}:")
+            print("Original Data:\n", originals[i])
+            # print("Original shape:\n", originals[i].shape)
+            print("Reconstruction:\n", reconstructions[9][i])
+            # print("Reconstruction shape:\n", reconstructions[9][i].shape)
+            print("\n")  # Add a newline for better readability between samples
     else:
         print("Error: Original data not captured correctly.")
 
-    num_samples = 10
-    # sampled_data = sample_from_latent_space(model, device, num_samples=num_samples)
-    # sampled_data = sample_from_latent_space_adjusted(model, device, num_samples=num_samples,latent_mean, latent_std)
-    # print(latent_mean)
-    # print(latent_std)
-    sampled_data = sample_from_latent_space_adjusted(
-        model=model,
-        device=device,
-        num_samples=num_samples,
-        latent_mean=latent_mean,
-        latent_std=latent_std
-    )
 
-    plot_samples(sampled_data)
-    print("Sampled Data Shape:", sampled_data.shape)
-    visualize_latent_space(model, test_loader, device)
-    save_loss_plot(train_losses, 'Loss/train')
+    # print("Sampled Data Shape:", sampled_data.shape)
+    # visualize_latent_space(model, test_loader, device)
+    # save_loss_plot(train_losses, 'Loss/train')

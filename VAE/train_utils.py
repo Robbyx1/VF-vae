@@ -9,8 +9,10 @@ import numpy as np
 def loss_function(recon_x, x, mu, logvar):
     BCE = F.binary_cross_entropy(recon_x, x.view(-1, 54), reduction='sum')
     # MSE = F.mse_loss(recon_x, x.view(-1, 54), reduction='sum')
+    # MAE = F.l1_loss(recon_x, x.view(-1, 54), reduction='sum')
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    return BCE + KLD
+    return  BCE + KLD
+    # return  MAE
 
 def train(model, device, train_loader, optimizer, epoch, log_interval):
     model.train()
@@ -27,6 +29,7 @@ def train(model, device, train_loader, optimizer, epoch, log_interval):
         if batch_idx % log_interval == 0:
             print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item() / len(data):.6f}')
     print(f'====> Epoch: {epoch} Average loss: {train_loss / len(train_loader.dataset):.4f}')
+    return train_loss / len(train_loader.dataset)
 
 # def test(model, device, test_loader, epoch, results_dir='results_vae'):
 #     model.eval()
@@ -108,3 +111,19 @@ def test(model, device, test_loader, epoch, reconstructions, originals, results_
     test_loss /= len(test_loader.dataset)
     print(f'====> Test set loss: {test_loss:.4f}')
     return originals
+
+def sample_from_latent_space(model, device, num_samples=10):
+    model.eval()
+    # Generate random latent variables
+    latent_dim = 20
+    random_latent_vectors = torch.randn(num_samples, latent_dim).to(device)
+    with torch.no_grad():
+        generated_data = model.decode(random_latent_vectors)
+    return generated_data
+
+def sample_from_latent_space_adjusted(model, device, num_samples=10, latent_mean=0, latent_std=1):
+
+    random_latent_vectors = torch.randn(num_samples, model.latent_dim).to(device) *2*latent_std + latent_mean
+    # print(random_latent_vectors[:5])
+    sampled_data = model.decode(random_latent_vectors)
+    return sampled_data

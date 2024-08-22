@@ -3,12 +3,13 @@ from torch import nn
 from torch.nn import functional as F
 
 class VAE(nn.Module):
-    def __init__(self):
+    def __init__(self, latent_dim=20):
         super(VAE, self).__init__()
+        self.latent_dim = latent_dim
         self.fc1 = nn.Linear(54, 400)
-        self.fc21 = nn.Linear(400, 20)
-        self.fc22 = nn.Linear(400, 20)
-        self.fc3 = nn.Linear(20, 400)
+        self.fc21 = nn.Linear(400, self.latent_dim)
+        self.fc22 = nn.Linear(400, self.latent_dim)
+        self.fc3 = nn.Linear(self.latent_dim, 400)
         self.fc4 = nn.Linear(400, 54)
 
     def encode(self, x):

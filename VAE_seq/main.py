@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision.utils import save_image
-from plot import plot_hvf, plot_all_reconstructions
+from plot import plot_hvf, plot_all_reconstructions, save_loss_plot
 import os
 
 from vae_model import SequentialVAE
@@ -54,17 +54,21 @@ optimizer = optim.Adam(model.parameters(), lr=1e-3)
 if __name__ == "__main__":
     originals = None
     input_o = None
-    reconstructions = {i: [] for i in range(10)}  # Assuming 10 test cases as an example
+    reconstructions = {i: [] for i in range(10)}
     results_dir = 'results_seq_vae_12*10'
-    os.makedirs(results_dir, exist_ok=True)  # Ensure the results directory is created
+    os.makedirs(results_dir, exist_ok=True)
+    train_losses = []
 
     for epoch in range(1, args.epochs + 1):
-        train(model, device, train_loader, optimizer, epoch, args.log_interval)
+        train_loss = train(model, device, train_loader, optimizer, epoch, args.log_interval)
         originals, input_o = test(model, device, test_loader, epoch, reconstructions, originals,input_o, results_dir)
         # originals, input_o, reconstructions = test(model, device, test_loader, results_dir, num_cases=10)
+        train_losses.append(train_loss)
 
 
     if originals is not None:
         plot_all_reconstructions(originals, reconstructions,input_o, args.epochs, results_dir)
     else:
         print("Error: Original data not captured correctly.")
+
+    save_loss_plot(train_losses, 'Loss/train')

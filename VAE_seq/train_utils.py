@@ -11,8 +11,9 @@ def loss_function(recon_x, x, mu, logvar):
     # MSE = F.mse_loss(recon_x, x, reduction='sum')
     BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    # MAE = F.l1_loss(recon_x, x, reduction='sum')
     return BCE + KLD
-
+    # return MAE
 
 def train(model, device, train_loader, optimizer, epoch, log_interval):
     model.train()  # Set the model to training mode
@@ -32,6 +33,7 @@ def train(model, device, train_loader, optimizer, epoch, log_interval):
                 f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item() / len(data):.6f}')
 
     print(f'====> Epoch: {epoch} Average loss: {train_loss / len(train_loader.dataset):.4f}')
+    return train_loss / len(train_loader.dataset)
 
 
 def test(model, device, test_loader, epoch, reconstructions, originals,input_o, results_dir='results_vae_10', num_cases=10):
