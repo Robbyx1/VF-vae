@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch
-from config import init_mask as mask
+from config import init_mask
 
 
 
@@ -130,51 +130,44 @@ def visualize_latent_space(model, data_loader, device,  results_dir='latent spac
     plt.close()
 
 
-def save_loss_plot(train_losses, title, results_dir='loss'):
+# def save_loss_plot(train_losses, title, results_dir='loss'):
+#     if not os.path.exists(results_dir):
+#         os.makedirs(results_dir)
+#
+#     # Create the plot
+#     plt.figure(figsize=(10, 6))
+#     plt.plot(train_losses, label='MAE + KDL Train Loss')
+#     plt.title(title)
+#     plt.xlabel('Epoch')
+#     plt.ylabel('Loss')
+#     plt.legend()
+#     plt.grid(True)
+#
+#     plt.savefig(os.path.join(results_dir, 'loss.png'))
+#     plt.close()
+#     print("loss printed")
+
+def save_loss_plot(train_losses, val_losses, title, results_dir='loss'):
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
 
-    # Create the plot
     plt.figure(figsize=(10, 6))
-    plt.plot(train_losses, label='MAE + KDL Loss')
+    plt.plot(train_losses, label='Training Loss', marker='o')
+    plt.plot(val_losses, label='Validation Loss', marker='x')
     plt.title(title)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
     plt.grid(True)
 
-    plt.savefig(os.path.join(results_dir, 'loss.png'))
+    # Save the plot to the specified directory
+    plt.savefig(os.path.join(results_dir, 'loss_comparison.png'))
     plt.close()
-    print("loss printed")
+    print("Loss comparison plot saved.")
 
-# def plot_comparison(originals, reconstructions, results_dir='results_vae_comparisons'):
-#     if not os.path.exists(results_dir):
-#         os.makedirs(results_dir)
-#     num_samples = min(len(originals), len(reconstructions))
-#     fig, axes = plt.subplots(num_samples, 2, figsize=(10, 5 * num_samples))  # Two columns: one for original and one for reconstruction
-#
-#     for i in range(num_samples):
-#         # Ensure data is squeezed of any singleton dimensions
-#         original_img = np.squeeze(originals[i])
-#         reconstruction_img = np.squeeze(reconstructions[i])
-#
-#         # Plot original data
-#         ax = axes[i, 0]
-#         ax.imshow(original_img, cmap='gray', interpolation='none')
-#         ax.set_title(f'Original {i + 1}')
-#         ax.axis('off')
-#
-#         # Plot reconstructed data
-#         ax = axes[i, 1]
-#         ax.imshow(reconstruction_img, cmap='gray', interpolation='none')
-#         ax.set_title(f'Reconstruction {i + 1}')
-#         ax.axis('off')
-#
-#     plt.tight_layout()
-#     plt.savefig(os.path.join(results_dir, 'comparison.png'))
-#     plt.close()
 
-def plot_comparison(originals, reconstructions, mask, num_samples=5, results_dir='results_comparison'):
+
+def plot_comparison(originals, reconstructions, mean, std , mask, title="Comparison of Original and Reconstruction", num_samples=5, results_dir='results_comparison'):
     import os
     import matplotlib.pyplot as plt
     import numpy as np
@@ -185,29 +178,79 @@ def plot_comparison(originals, reconstructions, mask, num_samples=5, results_dir
     fig, axs = plt.subplots(num_samples, 2, figsize=(10, 5 * num_samples))  # 2 columns for original and reconstructed
     mask = mask.cpu().numpy()  # Convert mask to numpy array once
     for i in range(num_samples):
-        original_img = originals[i].squeeze()
-        reconstruction_img = reconstructions[i][-1].squeeze()  # Assuming last epoch's reconstruction
+        original_img = originals[i].squeeze()*mask
+        reconstruction_img = reconstructions[i][-1].squeeze()  # last epoch's reconstruction
 
-        # Apply the mask
+        if isinstance(mean, torch.Tensor):
+            mean = mean.numpy()
+        if isinstance(std, torch.Tensor):
+            std = std.numpy()
         original_display = np.where(mask == 1, original_img, np.nan)  # Set masked areas to NaN for original
+        original_display = original_display * std + mean
         reconstruction_display = np.where(mask == 1, reconstruction_img, np.nan)  # Set masked areas to NaN for reconstruction
-
+        reconstruction_display = reconstruction_display*std + mean
         # Plot original data
         axs[i, 0].imshow(original_display, cmap='gray', interpolation='none', vmin=np.nanmin(original_display), vmax=np.nanmax(original_display))
         axs[i, 0].set_title(f'Original Sample {i+1}')
         axs[i, 0].axis('off')  # Turn off axis
 
         # Plot reconstructed data
+        # axs[i, 1].imshow(reconstruction_display, cmap='gray', interpolation='none', vmin=np.nanmin(reconstruction_display), vmax=np.nanmax(reconstruction_display))
         axs[i, 1].imshow(reconstruction_display, cmap='gray', interpolation='none', vmin=np.nanmin(reconstruction_display), vmax=np.nanmax(reconstruction_display))
-        axs[i, 1].imshow(reconstruction_display, cmap='gray_r', interpolation='none', vmin=np.nanmin(reconstruction_display), vmax=np.nanmax(reconstruction_display))
 
         axs[i, 1].set_title(f'Reconstructed Sample {i+1}')
         axs[i, 1].axis('off')  # Turn off axis
-
+    plt.suptitle(title, fontsize=16)
     plt.tight_layout()
-    plt.savefig(os.path.join(results_dir, 'comparison.png'))
+    plt.savefig(os.path.join(results_dir, f'comparison {title}.png'))
     plt.close()
 
+def plot_single_hvf(image, mean, std, results_dir, file_name='hvf_plot.png'):
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    # Convert the image tensor to numpy if it's a torch tensor
+    if isinstance(image, torch.Tensor):
+        image = image.cpu().numpy()
+    if isinstance(mean, torch.Tensor):
+        mean = mean.cpu()
+    if isinstance(std, torch.Tensor):
+        std = std.cpu()
+    if isinstance(image, torch.Tensor):
+        image = image.numpy()
+
+    if isinstance(mean, torch.Tensor):
+        mean = mean.numpy()
+
+    if isinstance(std, torch.Tensor):
+        std = std.numpy()
+
+    image = image * std + mean
+    # Call the init_mask function to generate the mask tensor and convert to numpy
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    mask = init_mask(device).cpu().numpy()
+
+    # Apply the mask to the image
+    image = image.squeeze()  # Remove unnecessary dimensions
+    image_dis = np.where(mask == 1, image, np.nan)  # Apply the mask
+
+    # Debugging output
+    print("Mask:\n", mask)
+    print("Masked Image Display:\n", image_dis)
+
+    fig, ax = plt.subplots()
+    # Plotting the data
+    ax.imshow(image_dis, cmap='gray', interpolation='none', vmin=np.nanmin(image_dis), vmax=np.nanmax(image_dis))
+    ax.set_title("Visual Field Image")
+    ax.axis('off')  # Hide axes
+
+    # Save the figure
+    plt.savefig(os.path.join(results_dir, file_name))
+    plt.close()
+
+
+def unnormalize(image, mean, std):
+    return image * std + mean
 
 if __name__ == "__main__":
     test_data_original = np.random.normal(loc=-2.0, scale=5.0, size=54)
