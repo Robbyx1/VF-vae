@@ -19,11 +19,13 @@ def loss_function(recon_x, x, mu, logvar, mask):
     MAE = F.l1_loss(recon_x, x, reduction='none')
     # MAE = criterion(recon_x, x)
     masked_mae = MAE * mask
-    total_loss = torch.sum(masked_mae) / torch.sum(mask)
-    # BCE = F.binary_cross_entropy(recon_x * mask, x * mask, reduction='sum')
+    total_loss = torch.sum(masked_mae) / (torch.sum(mask) * x.shape[0])
+    # total_loss = torch.sum(masked_mae) / (torch.sum(mask))
+    BCE = F.binary_cross_entropy(recon_x * mask, x * mask, reduction='sum')
     # MAE = F.l1_loss(recon_x, x, reduction='sum')
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    return  total_loss+KLD
+    # return  BCE+KLD
+    return  total_loss
 
 
 def train(model, device, train_loader, optimizer, epoch, log_interval, mask):

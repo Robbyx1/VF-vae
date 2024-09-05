@@ -8,7 +8,7 @@ from plot import plot_hvf, plot_all_reconstructions, plot_samples, visualize_lat
 import os
 from config import init_mask
 from vae_model import VAE
-from train_utils import train, test, sample_from_latent_space, sample_from_latent_space_adjusted, validate, test_and_evaluate
+from train_utils import train, sample_from_latent_space, sample_from_latent_space_adjusted, validate, test_and_evaluate
 from hvf_dataset import HVFDataset
 import random
 
@@ -63,18 +63,18 @@ train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=Tru
 val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)  # No need to shuffle validation data
 test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-# show the batch shapes from each DataLoader
-for i, data in enumerate(train_loader):
-    print(f"Train Batch {i} shape: {data.shape}")
-    if i == 0: break  # print just the first batch
-
-for i, data in enumerate(val_loader):
-    print(f"Validation Batch {i} shape: {data.shape}")
-    if i == 0: break
-
-for i, data in enumerate(test_loader):
-    print(f"Test Batch {i} shape: {data.shape}")
-    if i == 0: break
+# # show the batch shapes from each DataLoader
+# for i, data in enumerate(train_loader):
+#     print(f"Train Batch {i} shape: {data.shape}")
+#     if i == 0: break  # print just the first batch
+#
+# for i, data in enumerate(val_loader):
+#     print(f"Validation Batch {i} shape: {data.shape}")
+#     if i == 0: break
+#
+# for i, data in enumerate(test_loader):
+#     print(f"Test Batch {i} shape: {data.shape}")
+#     if i == 0: break
 
 # Initialize the model and optimizer
 model = VAE(latent_dim=args.latent_dim).to(device)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
 
         for _, inputs in enumerate(train_loader):
             inputs = inputs.to(device)
-            _, mu, logvar = model(inputs)
+            _, mu, logvar, _, _ = model(inputs)
             latent_mean += mu.sum(0)
             latent_logvar += logvar.sum(0)
             total_data_count += inputs.size(0)
@@ -135,6 +135,9 @@ if __name__ == "__main__":
         latent_dim = args.latent_dim
         title = f'Loss_train_valid for dim_{latent_dim}'
         save_loss_plot(train_losses,validation_losses, title)
+        print(f"train_loss: {train_losses}")
+        print(f"validation_losses: {validation_losses}")
+
         # plot_all_reconstructions(originals, reconstructions, args.epochs, results_dir)
         plot_comparison(best_5_originals,best_5_reconstructions,full_dataset.mean, full_dataset.std,static_mask, "best_5")
         plot_comparison(worst_5_originals,best_5_reconstructions,full_dataset.mean, full_dataset.std,static_mask, "worst_5")
