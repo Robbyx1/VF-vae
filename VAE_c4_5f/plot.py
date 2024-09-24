@@ -4,6 +4,9 @@ import numpy as np
 import os
 import torch
 from config import init_mask
+import seaborn as sns
+import pandas as pd
+
 
 
 
@@ -231,6 +234,323 @@ def plot_single_hvf(image, results_dir, file_name='hvf_plot.png'):
     plt.savefig(os.path.join(results_dir, file_name))
     plt.close()
 
+def plot_hvf_arch(samples, results_dir, file_name='hvf_row_plot.png'):
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    # Set up a figure for 10 plots in a row
+    fig, axes = plt.subplots(1, len(samples), figsize=(20, 5))  # 10 plots in a row
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    mask = init_mask(device).cpu().numpy()
+
+    for idx, sample in enumerate(samples):
+        hvf_image = sample['td_data']
+        decomposed_value = sample['HighestDecomposedValue']
+
+        # Convert the tensor to numpy
+        if isinstance(hvf_image, torch.Tensor):
+            hvf_image = hvf_image.cpu().numpy()
+
+        # Apply the mask to the image
+        hvf_image = hvf_image.squeeze()  # Remove unnecessary dimensions
+        hvf_image_dis = np.where(mask == 1, hvf_image, np.nan)  # Apply the mask
+
+        # Plotting each image
+        ax = axes[idx]
+        ax.imshow(hvf_image_dis, cmap='gray', interpolation='none', vmin=np.nanmin(hvf_image_dis), vmax=np.nanmax(hvf_image_dis))
+        ax.set_title(f"{decomposed_value:.4f}")  # Set the title as the HighestDecomposedValue
+        ax.axis('off')  # Hide axes
+
+    # Save the figure
+    plt.savefig(os.path.join(results_dir, file_name))
+    plt.close()
+
+
+def visualize_latent_vectors(latent_vectors):
+    # Convert latent vectors to a numpy array for easier plotting
+    latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [10, latent_dim]
+
+    # Get the number of latent dimensions
+    latent_dim = latent_array.shape[1]
+
+    # Set up a figure
+    plt.figure(figsize=(10, 6))
+
+    # Plot each dimension of the latent vector across the samples
+    for i in range(latent_dim):
+        plt.plot(range(1, latent_array.shape[0] + 1), latent_array[:, i], label=f'Latent Dim {i + 1}')
+
+    # Add titles and labels
+    plt.title('Latent Vector Evolution')
+    plt.xlabel('Latent Vector Index (1-10)')
+    plt.ylabel('Latent Value')
+    plt.legend(loc='upper right')
+
+    # Show the plot
+    plt.grid(True)
+    plt.show()
+
+
+def visualize_latent_distribution(latent_vectors):
+    # Convert latent vectors to a numpy array for easier plotting
+    latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [10, latent_dim]
+
+    # Set up a figure
+    plt.figure(figsize=(10, 6))
+
+    # Create a box plot for each latent dimension
+    plt.boxplot(latent_array, vert=True, patch_artist=True,
+                labels=[f'Dim {i + 1}' for i in range(latent_array.shape[1])])
+
+    # Add titles and labels
+    plt.title('Latent Vector Distribution Across Dimensions')
+    plt.xlabel('Latent Dimension')
+    plt.ylabel('Latent Value')
+
+    # Show the plot
+    plt.grid(True)
+    plt.show()
+
+def visualize_latent_distribution_violin(latent_vectors):
+    # Convert latent vectors to a pandas DataFrame for easier plotting with seaborn
+    latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [10, latent_dim]
+    df = pd.DataFrame(latent_array, columns=[f'Dim {i+1}' for i in range(latent_array.shape[1])])
+
+    # Set up a figure
+    plt.figure(figsize=(10, 6))
+
+    # Create a violin plot for each latent dimension
+    sns.violinplot(data=df)
+
+    # Add titles and labels
+    plt.title('Latent Vector Distribution Across Dimensions')
+    plt.xlabel('Latent Dimension')
+    plt.ylabel('Latent Value')
+
+    # Show the plot
+    plt.grid(True)
+    plt.show()
+
+
+def visualize_latent_vectors_across_dimensions(encoded_latent_vectors):
+    plt.figure(figsize=(10, 6))
+
+    # Define a color map for distinct types
+    colors = plt.cm.get_cmap('tab10', len(encoded_latent_vectors))
+
+    # Loop through each type and plot the mean latent vector for that type
+    for idx, (type_val, latent_vectors) in enumerate(encoded_latent_vectors.items()):
+        # Convert latent vectors to a numpy array
+        latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [5, 10]
+
+        # Compute the mean vector across the samples for each type
+        mean_latent_vector = latent_array.mean(axis=0)  # Shape: [latent_dim]
+
+        # Plot the mean latent vector across dimensions
+        plt.plot(range(1, len(mean_latent_vector) + 1), mean_latent_vector, label=f'Type {type_val}', color=colors(idx))
+
+    # Add titles and labels
+    plt.title('Mean Latent Vector Across Dimensions for Each Type')
+    plt.xlabel('Latent Dimension')
+    plt.ylabel('Latent Value')
+    plt.legend(loc='upper right', ncol=2)  # Add fewer columns to reduce clutter
+
+    # Show the plot
+    plt.grid(True)
+    plt.show()
+
+def visualize_sorted_latent_vectors(encoded_latent_vectors):
+    plt.figure(figsize=(10, 6))
+
+    # Convert keys to integers (if they are stored as strings) and sort them
+    sorted_keys = sorted(encoded_latent_vectors.keys(), key=lambda x: int(x))
+
+    # Define a color map with a gradual change, e.g., 'viridis' or 'plasma'
+    colors = plt.cm.viridis(np.linspace(0, 1, len(sorted_keys)))
+
+    # Loop through each type and plot the mean latent vector for that type
+    for idx, type_val in enumerate(sorted_keys):
+        latent_vectors = encoded_latent_vectors[type_val]
+        latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [5, 10]
+
+        # Compute the mean vector across the samples for each type
+        mean_latent_vector = latent_array.mean(axis=0)  # Shape: [latent_dim]
+
+        # Plot the mean latent vector across dimensions using the gradual color map
+        plt.plot(range(1, len(mean_latent_vector) + 1), mean_latent_vector,
+                 label=f'Type {type_val}', color=colors[idx])
+
+    # Add titles and labels
+    plt.title('Mean Latent Vector Across Dimensions for Each Type')
+    plt.xlabel('Latent Dimension')
+    plt.ylabel('Latent Value')
+    plt.legend(loc='upper right', ncol=2)  # Adjust legend to fit more compactly
+    plt.grid(True)
+
+    # Show the plot
+    plt.show()
+
+
+def visualize_original_latent_vectors(encoded_latent_vectors):
+    plt.figure(figsize=(10, 6))
+
+    # Convert keys to integers (if they are stored as strings) and sort them
+    sorted_keys = sorted(encoded_latent_vectors.keys(), key=lambda x: int(x))
+
+    # Define a color map with a gradual change, e.g., 'viridis' or 'plasma'
+    colors = plt.cm.viridis(np.linspace(0, 1, len(sorted_keys)))
+
+    # Loop through each type and plot the 5 latent vectors for that type using the same color
+    for idx, type_val in enumerate(sorted_keys):
+        latent_vectors = encoded_latent_vectors[type_val]
+        latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [5, latent_dim]
+
+        # Plot each of the 5 vectors for the current type with the same color
+        for i in range(latent_array.shape[0]):
+            if i == 0:
+                # Add label only for the first vector to avoid duplicate labels
+                plt.plot(range(1, latent_array.shape[1] + 1), latent_array[i],
+                         label=f'Type {type_val}', color=colors[idx])
+            else:
+                plt.plot(range(1, latent_array.shape[1] + 1), latent_array[i],
+                         color=colors[idx])
+
+    # Add titles and labels
+    plt.title('Latent Vectors Across Dimensions for Each Type')
+    plt.xlabel('Latent Dimension')
+    plt.ylabel('Latent Value')
+    plt.legend(loc='upper right', ncol=2)  # Adjust legend to fit more compactly
+    plt.grid(True)
+
+    # Show the plot
+    plt.show()
+
+
+def visualize_highlighted_latent_vectors(encoded_latent_vectors):
+    plt.figure(figsize=(10, 6))
+
+    # Convert keys to integers (if they are stored as strings) and sort them
+    sorted_keys = sorted(encoded_latent_vectors.keys(), key=lambda x: int(x))
+
+    # Define a color map with a gradual change, e.g., 'viridis'
+    colors = plt.cm.viridis(np.linspace(0, 1, len(sorted_keys)))
+
+    # Manually assign special colors for type 1, type 8, and type 13
+    special_colors = {1: 'darkred', 8: 'red', 13: 'blue'}
+
+    # Loop through each type and plot the mean latent vector for that type
+    for idx, type_val in enumerate(sorted_keys):
+        latent_vectors = encoded_latent_vectors[type_val]
+        latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [5, 10]
+
+        # Compute the mean vector across the samples for each type
+        mean_latent_vector = latent_array.mean(axis=0)  # Shape: [latent_dim]
+
+        # Assign color based on type
+        color = special_colors.get(int(type_val), colors[idx])  # Use special color for types 1, 8, and 13
+
+        # Plot the mean latent vector across dimensions
+        plt.plot(range(1, len(mean_latent_vector) + 1), mean_latent_vector,
+                 label=f'Type {type_val}', color=color)
+
+    # Add titles and labels
+    plt.title('Mean Latent Vector Across Dimensions for Each Type')
+    plt.xlabel('Latent Dimension')
+    plt.ylabel('Latent Value')
+    plt.legend(loc='upper right', ncol=2)  # Adjust legend to fit more compactly
+    plt.grid(True)
+
+    # Show the plot
+    plt.show()
+
+def visualize_highlighted_and_faded_latent_vectors(encoded_latent_vectors):
+    plt.figure(figsize=(10, 6))
+
+    # Convert keys to integers (if they are stored as strings) and sort them
+    sorted_keys = sorted(encoded_latent_vectors.keys(), key=lambda x: int(x))
+
+    # Define a color map with a gradual change, e.g., 'viridis'
+    colors = plt.cm.viridis(np.linspace(0, 1, len(sorted_keys)))
+
+    # Manually assign special colors for type 1, type 8, and type 13
+    special_colors = {1: 'black', 8: 'red', 13: 'blue'}
+
+    # Loop through each type and plot the mean latent vector for that type
+    for idx, type_val in enumerate(sorted_keys):
+        latent_vectors = encoded_latent_vectors[type_val]
+        latent_array = np.array([lv.squeeze().numpy() for lv in latent_vectors])  # Shape: [5, 10]
+
+        # Compute the mean vector across the samples for each type
+        mean_latent_vector = latent_array.mean(axis=0)  # Shape: [latent_dim]
+
+        # Assign color based on type and set transparency (alpha) for non-special types
+        if int(type_val) in special_colors:
+            color = special_colors[int(type_val)]
+            alpha = 1.0  # No fading for special types
+            linewidth = 2.5  # Make highlighted lines thicker
+        else:
+            color = colors[idx]
+            alpha = 0.3  # Fade other types
+            linewidth = 1.0  # Regular thickness for faded lines
+
+        # Plot the mean latent vector across dimensions
+        plt.plot(range(1, len(mean_latent_vector) + 1), mean_latent_vector,
+                 label=f'Type {type_val}', color=color, alpha=alpha, linewidth=linewidth)
+
+    # Add titles and labels
+    plt.title('Mean Latent Vector Across Dimensions for Each Type')
+    plt.xlabel('Latent Dimension')
+    plt.ylabel('Latent Value')
+    plt.legend(loc='upper right', ncol=2)  # Adjust legend to fit more compactly
+    plt.grid(True)
+
+    # Show the plot
+    plt.show()
+
+def visualize_interpolation(interpolated_results):
+    plt.figure(figsize=(15, 5))
+
+    # Plot each interpolated result
+    for idx, result in enumerate(interpolated_results):
+        plt.subplot(1, len(interpolated_results), idx + 1)
+        plt.imshow(result, cmap='gray')
+        plt.axis('off')
+        plt.title(f'α={idx / (len(interpolated_results) - 1):.2f}')
+
+    plt.suptitle('Latent Space Interpolation between Type 8 and Type 13')
+    plt.show()
+
+def plot_interpolated_hvf_arch(interpolated_samples, results_dir, file_name='interpolated_hvf_row_plot.png'):
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    # Set up a figure for 10 plots in a row
+    fig, axes = plt.subplots(1, len(interpolated_samples), figsize=(20, 5))  # N plots in a row
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    mask = init_mask(device).cpu().numpy()
+
+    for idx, sample in enumerate(interpolated_samples):
+        # Convert the tensor to numpy if it is a torch.Tensor
+        if isinstance(sample, torch.Tensor):
+            hvf_image = sample.cpu().numpy()
+        else:
+            hvf_image = sample  # Already a numpy array
+
+        # Apply the mask to the image
+        hvf_image = hvf_image.squeeze()  # Remove unnecessary dimensions
+        hvf_image_dis = np.where(mask == 1, hvf_image, np.nan)  # Apply the mask
+
+        # Plotting each image
+        ax = axes[idx]
+        ax.imshow(hvf_image_dis, cmap='gray', interpolation='none', vmin=np.nanmin(hvf_image_dis), vmax=np.nanmax(hvf_image_dis))
+        ax.set_title(f"α = {idx / (len(interpolated_samples) - 1):.2f}")  # Set the title as the interpolation value (alpha)
+        ax.axis('off')  # Hide axes
+
+    # Save the figure
+    plt.savefig(os.path.join(results_dir, file_name))
+    plt.close()
 
 def unnormalize(image, mean, std):
     return image * std + mean
