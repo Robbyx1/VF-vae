@@ -4,11 +4,14 @@ import torch
 import torch.nn.functional as F
 from plot import plot_hvf, plot_hvf_arch, visualize_latent_vectors,visualize_latent_distribution, visualize_latent_distribution_violin,\
     visualize_latent_vectors_across_dimensions,visualize_sorted_latent_vectors,visualize_original_latent_vectors, \
-    visualize_highlighted_latent_vectors,visualize_highlighted_and_faded_latent_vectors, visualize_interpolation, plot_interpolated_hvf_arch
+    visualize_highlighted_latent_vectors,visualize_highlighted_and_faded_latent_vectors, visualize_interpolation, plot_interpolated_hvf_arch, \
+    plot_vector_arithmetic_results
 from vae_model import VAE
 from operator import itemgetter
 import numpy as np
 from scipy.spatial import distance
+import glo_var
+from hvf_dataset import HVFDataset as glo
 
 # Define the static mask globally
 static_mask = torch.tensor([
@@ -80,14 +83,30 @@ def extract_top_10_per_type(file_path):
 #     max_val = td_data*static_mask.max()
 #     return (td_data - min_val) / (max_val - min_val)
 
+# def normalize_to_0_1(td_data):
+#     # Apply the mask to get only valid (non-masked) elements and exclude values equal to 100
+#     valid_data = td_data[(static_mask == 1) & (td_data != 100.0)]
+#     # min_val = valid_data.min()
+#     # max_val = valid_data.max()
+#
+#     normalized_data = (td_data - glo_var.global_min) / (glo_var.global_max - glo_var.global_min)
+#     normalized_data = torch.where((static_mask == 1) & (td_data != 100.0), normalized_data, td_data)
+#     return normalized_data
 def normalize_to_0_1(td_data):
-    # Apply the mask to get only valid (non-masked) elements and exclude values equal to 100
-    valid_data = td_data[(static_mask == 1) & (td_data != 100.0)]
-    min_val = valid_data.min()
-    max_val = valid_data.max()
+    # Apply the mask to get only valid (non-masked) elements and exclude padding values (100)
+    valid_min = glo_var.global_min[(static_mask == 1) & (glo_var.global_min != 100.0)]
+    valid_max = glo_var.global_max[(static_mask == 1) & (glo_var.global_max != 100.0)]
 
+    # Use global min and max, ignoring padding (values of 100)
+    min_val = valid_min.min()
+    max_val = valid_max.max()
+
+    # Normalize the valid data using the global min and max (excluding padding)
     normalized_data = (td_data - min_val) / (max_val - min_val)
+
+    # Restore the original padding values of 100
     normalized_data = torch.where((static_mask == 1) & (td_data != 100.0), normalized_data, td_data)
+
     return normalized_data
 
 def load_model(model_file):
@@ -109,9 +128,9 @@ def encode_samples_to_latent_space(samples, model_file):
         # model expects a shape like [1, 1, 12, 12] for a single sample
         normalized_td = normalized_td.unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
 
-        print(f"Normalized td_data for PatientID {sample['PatientID']}, Age {sample['Age']}:")
-        print(f"Shape: {normalized_td.shape}")
-        print(normalized_td)
+        # print(f"Normalized td_data for PatientID {sample['PatientID']}, Age {sample['Age']}:")
+        # print(f"Shape: {normalized_td.shape}")
+        # print(normalized_td)
         # Feed the normalized data into the model and extract the latent space
         with torch.no_grad():  # No need to track gradients for evaluation
             latent_space = model.encode(normalized_td)  # Adjust this based on your model structure
@@ -119,7 +138,7 @@ def encode_samples_to_latent_space(samples, model_file):
         # Append the latent space vector to the list
         latent_vectors.append(latent_space)
 
-        print(f"Latent space for PatientID {sample['PatientID']}, Age {sample['Age']} calculated.")
+        # print(f"Latent space for PatientID {sample['PatientID']}, Age {sample['Age']} calculated.")
 
     return latent_vectors
 
@@ -156,7 +175,9 @@ def interpolate_latent_vectors(model, z_type_8, z_type_13, steps=10):
 
         # Decode the interpolated latent vector back to data space
         with torch.no_grad():
+            # print(z_interpolated)
             decoded = model.decode(z_interpolated.unsqueeze(0))  # Add batch dimension
+            # print(decoded)
             interpolated_results.append(decoded.squeeze().cpu().numpy())
 
     return interpolated_results
@@ -187,8 +208,28 @@ def find_extreme_latent_vectors(encoded_latent_vectors):
     vec2 = torch.tensor(max_pair[1])
     return vec1, vec2
 
+def vector_arithmetic_direct(model, latent_vectors_dict):
+    # Select three vectors from the dictionary
+    vec1 = latent_vectors_dict[6][0]
+    vec2 = latent_vectors_dict[15][0]
+    vec3 = latent_vectors_dict[1][0]
+
+    # Perform vector arithmetic directly: vec1 - vec2 + vec3
+    result_vector = vec1 - vec2 + vec3
+
+    result_image = model.decode(result_vector.unsqueeze(0))
+    res1 = model.decode(vec1.unsqueeze(0))
+    res2 = model.decode(vec2.unsqueeze(0))
+    res3 = model.decode(vec3.unsqueeze(0))
+
+    return res1, res2,res3, result_image
+    # return res1, res2, result_image
+
 def main():
     hvf_dataset = HVFDataset('../src/uwhvf/alldata.json')
+    print(f"Global min1: {glo_var.global_min}, Global max1: {glo_var.global_max}")
+    glo_cal = glo('../src/uwhvf/alldata.json')
+    print(f"Global min2: {glo_var.global_min}, Global max2: {glo_var.global_max}")
     decomposed_data_file = '/Users/xingrobert/Documents/2024/glaucoma progression/VF-diffusion/R/patient_data_decomposed_max.csv'
 
     extracted_rows = extract_decomposed_data(decomposed_data_file)
@@ -198,7 +239,7 @@ def main():
         print(f"Type {type_val}:")
         for row in top_rows:
             print(row)
-    print(f"Found {len(extracted_rows)} entries where the 8th archetype is the largest.")
+    # print(f"Found {len(extracted_rows)} entries where the 8th archetype is the largest.")
 
     td_data_dict = {}
 
@@ -215,7 +256,8 @@ def main():
             td_data = hvf_dataset.get_td_by_patient_age(patient_id, age, eye)
 
             if td_data is not None:
-                td_data = F.pad(td_data, (2, 1, 2, 2), value=100.0) * static_mask
+                td_data = F.pad(td_data, (2, 1, 2, 2), value=100.0)
+                # td_data = F.pad(td_data, (2, 1, 2, 2), value=100.0) * static_mask
                 td_data_list.append({
                     'td_data': td_data,
                     'PatientID': patient_id,
@@ -290,13 +332,22 @@ def main():
     # visualize_original_latent_vectors(encoded_latent_vectors)
     # visualize_highlighted_latent_vectors(encoded_latent_vectors)
     # visualize_highlighted_and_faded_latent_vectors(encoded_latent_vectors)
-    z_type_8 = encoded_latent_vectors[3][0]  # 0.991
-    z_type_13 = encoded_latent_vectors[5][0] # 0.977
+    # z_type_8 = encoded_latent_vectors[1][0]
+    # z_type_13 = encoded_latent_vectors[6][0]
+    z_type_8 = encoded_latent_vectors[1][0]
+    z_type_13 = encoded_latent_vectors[6][0]
+    # z_type_13 = encoded_latent_vectors[11][0] - encoded_latent_vectors[15][0] + encoded_latent_vectors[1][0]
+    z_base = encoded_latent_vectors[6][0]
     vec1, vec2 = find_extreme_latent_vectors(encoded_latent_vectors)
     model = load_model(model_file)
-    # interpolated_results = interpolate_latent_vectors(model, z_type_8, z_type_13, steps=10)
-    interpolated_results = interpolate_latent_vectors(model, vec1, vec2, steps=10)
+    interpolated_results = interpolate_latent_vectors(model, z_type_8, z_type_13, steps=10)
+    # interpolated_results = interpolate_latent_vectors(model, vec1, vec2, steps=10)
     # visualize_interpolation(interpolated_results)
     plot_interpolated_hvf_arch(interpolated_results,results_dir='interpolation_results', file_name='latent_space_interpolation.png')
+    res1, res2,res3, result_image = vector_arithmetic_direct(model, encoded_latent_vectors)
+    # res1, res2, result_image = vector_arithmetic_direct(model, encoded_latent_vectors)
+    plot_vector_arithmetic_results([res1, res2, res3, result_image], results_dir='arithmetic_results',
+    # plot_vector_arithmetic_results([res1, res2, result_image], results_dir='arithmetic_results',
+                                   file_name='vector_arithmetic_plot.png')
 if __name__ == "__main__":
     main()

@@ -552,6 +552,40 @@ def plot_interpolated_hvf_arch(interpolated_samples, results_dir, file_name='int
     plt.savefig(os.path.join(results_dir, file_name))
     plt.close()
 
+def plot_vector_arithmetic_results(samples, results_dir, file_name='vector_arithmetic_plot.png'):
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    # Set up a figure for 4 plots in a row
+    fig, axes = plt.subplots(1, len(samples), figsize=(20, 5))  #plots in a row
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    mask = init_mask(device).cpu().numpy()
+
+    titles = ['vec1', 'vec2','vec3', 'Result']  # Titles for each plot
+    # titles = ['vec1', 'vec2', 'Result']  # Titles for each plot
+
+    for idx, sample in enumerate(samples):
+        # Convert the tensor to numpy if it is a torch.Tensor
+        if isinstance(sample, torch.Tensor):
+            hvf_image = sample.detach().cpu().numpy()
+        else:
+            hvf_image = sample  # Already a numpy array
+
+        # Apply the mask to the image
+        hvf_image = hvf_image.squeeze()  # Remove unnecessary dimensions
+        hvf_image_dis = np.where(mask == 1, hvf_image, np.nan)  # Apply the mask
+
+        # Plotting each image
+        ax = axes[idx]
+        ax.imshow(hvf_image_dis, cmap='gray', interpolation='none', vmin=np.nanmin(hvf_image_dis), vmax=np.nanmax(hvf_image_dis))
+        ax.set_title(titles[idx])  # Set the title for each plot
+        ax.axis('off')  # Hide axes
+
+    # Save the figure
+    plt.savefig(os.path.join(results_dir, file_name))
+    plt.close()
+
 def unnormalize(image, mean, std):
     return image * std + mean
 
