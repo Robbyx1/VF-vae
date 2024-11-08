@@ -97,7 +97,7 @@ def plot_samples(sampled_data, results_dir='results_vae_samples'):
             ax.set_title(f'Sample {i + 1}')
             ax.axis('off')
         else:
-            ax.axis('off')  # Turn off axis for empty plots
+            ax.axis('off')
 
     plt.tight_layout()
     plt.savefig(os.path.join(results_dir, 'vae_samples.png'))

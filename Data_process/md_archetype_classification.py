@@ -102,17 +102,13 @@ def load_json_data(file_path):
 # Process the dataset and classify MD values
 def process_data(data):
     classification_counts = {"mild": [], "moderate": [], "severe": []}
-    lost_cases_count = 0  # Counter for lost cases
-
-    # Iterate over all patients
+    lost_cases_count = 0
     for patient_id, patient_data in data['data'].items():
-        # Iterate over each eye ("L" or "R")
         for key, visits in patient_data.items():
-            if key in ['L', 'R']:  # Only process the visits for "L" and "R" keys (eyes)
-                # Iterate over each visit
-                if isinstance(visits, list):  # Ensure it's a list
+            if key in ['L', 'R']:  # Only process the visits for "L" and "R" keys
+                if isinstance(visits, list):
                     for visit in visits:
-                        if isinstance(visit, dict):  # Ensure each visit is a dictionary
+                        if isinstance(visit, dict):
                             md_value = visit.get('MD', None)
                             archetype_type = visit.get('Type', None)
 
@@ -121,13 +117,13 @@ def process_data(data):
                                 stage = classify_md(md_value)
                                 classification_counts[stage].append(archetype_type)
                             else:
-                                lost_cases_count += 1  # Increment for missing MD or Type
+                                lost_cases_count += 1
                         else:
                             print(f"Unexpected visit format: {visit}")
-                            lost_cases_count += 1  # Increment for unexpected visit format
+                            lost_cases_count += 1
             else:
                 print(f"Skipping non-eye data: {key}")
-                lost_cases_count += 1  # Increment for non-eye data (e.g., gender, year)
+                lost_cases_count += 1
 
     return classification_counts, lost_cases_count
 
@@ -156,7 +152,6 @@ def plot_archetype_distribution(classification_counts, total_cases):
         plt.savefig(f'archetype_distribution_{stage}.png')  # Save each plot as a PNG file
         plt.show()
 
-    # Print total cases for all classifications
     print(f"Total cases processed: {total_cases}")
 
 

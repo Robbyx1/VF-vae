@@ -30,36 +30,6 @@ class testDataset:
         return None
 
 
-# def add_archetypal_results_to_json(json_file, csv_file, output_file):
-#     # Load JSON data
-#     with open(json_file, 'r') as file:
-#         alldata = json.load(file)
-#
-#     # Load CSV data
-#     with open(csv_file, newline='') as csvfile:
-#         reader = csv.DictReader(csvfile)
-#         for row in reader:
-#             patient_id = row['PatientID']
-#             eye = row['Eye']
-#             age = round(float(row['Age']), 2)  # Round the age to match the rounding logic in the JSON data
-#             highest_decomposed_value = row['HighestDecomposedValue']  # Extract HighestDecomposedValue from CSV
-#             archetype_type = row['Type']  # Extract Type (archetypal type) from CSV
-#
-#             # Find the corresponding patient and eye data in the JSON
-#             for visit in alldata['data'].get(str(patient_id), {}).get(eye, []):
-#                 recorded_age = round(float(visit.get('age', 0)), 2)
-#                 if recorded_age == age:
-#                     # Add the archetypal result fields to the visit
-#                     visit['HighestDecomposedValue'] = highest_decomposed_value
-#                     visit['Type'] = archetype_type
-#                     break
-#
-#     # Save the updated JSON to a new file
-#     with open(output_file, 'w') as outfile:
-#         # json.dump(alldata, outfile, indent=4)
-#         json.dump(alldata, outfile)
-#
-#     print(f"Updated JSON file saved to {output_file}")
 
 def add_archetypal_and_decomposed_values_to_json(json_file, archetype_csv_file, decomposed_csv_file, output_file):
     with open(json_file, 'r') as file:

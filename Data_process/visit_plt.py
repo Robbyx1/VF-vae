@@ -4,7 +4,6 @@ import numpy as np
 
 # Helper function to transform td_seq into an 8x9 image matrix
 def transform_to_image(data):
-    # Initialize the matrix with 100.0 (indicating unused slots)
     matrix = np.full((8, 9), 100.0)
     indices = [
         (0, 3), (0, 4), (0, 5), (0, 6),
@@ -19,7 +18,6 @@ def transform_to_image(data):
     # Fill the specified indices with data from the input array
     for idx, (i, j) in enumerate(indices):
         matrix[i, j] = data[idx]
-    # Apply masking for the value 100, setting it to NaN for visualization purposes
     masked_matrix = np.where(matrix == 100, np.nan, matrix)
     return masked_matrix
 
@@ -41,43 +39,15 @@ def find_patients_with_many_visits(data, min_visits=15):
     return patients_with_many_visits
 
 
-# def plot_td_values_for_patient(patients_with_many_visits):
-#     for patient_id, eyes_data in patients_with_many_visits.items():
-#         for eye, visits in eyes_data.items():
-#             ages = []
-#             td_images = []
-#
-#             for visit in visits:
-#                 age = visit.get('age', None)
-#                 td_values = visit.get('td_seq', None)  # Assuming 'td_seq' holds the TD values
-#
-#                 if age is not None and td_values is not None:
-#                     ages.append(age)
-#                     td_images.append(transform_to_image(td_values))  # Transform td_seq to image
-#
-#             if ages and td_images:
-#                 num_visits = len(ages)
-#                 fig, axes = plt.subplots(1, num_visits, figsize=(num_visits * 3, 3))  # Adjust size based on number of visits
-#
-#                 # Plot each visit's TD image with corresponding age
-#                 for i, (age, td_image) in enumerate(zip(ages, td_images)):
-#                     axes[i].imshow(td_image, cmap='gray', interpolation='none')
-#                     axes[i].axis('off')
-#                     axes[i].set_title(f'Age {age:.2f}')
-#
-#                 plt.suptitle(f'TD Value Progression for Patient {patient_id}, Eye {eye}')
-#                 plt.tight_layout()
-#                 plt.show()
-
 def plot_td_values_for_patient(patients_with_many_visits):
     for patient_id, eyes_data in patients_with_many_visits.items():
         for eye, visits in eyes_data.items():
             ages = []
             td_images = []
 
-            for visit in visits[:15]:  # Limit to the first 15 visits
+            for visit in visits[:15]:
                 age = visit.get('age', None)
-                td_values = visit.get('td_seq', None)  # Assuming 'td_seq' holds the TD values
+                td_values = visit.get('td_seq', None)
 
                 if age is not None and td_values is not None:
                     ages.append(age)
@@ -85,11 +55,10 @@ def plot_td_values_for_patient(patients_with_many_visits):
 
             if ages and td_images:
                 num_visits = len(ages)
-                rows, cols = 3, 5  # 3 rows and 5 columns for a maximum of 15 visits
+                rows, cols = 3, 5
 
-                # Create the grid layout
-                fig, axes = plt.subplots(rows, cols, figsize=(15, 9))  # Adjust size accordingly
-                axes = axes.flatten()  # Flatten the 2D array of axes
+                fig, axes = plt.subplots(rows, cols, figsize=(15, 9))
+                axes = axes.flatten()
 
                 # Plot each visit's TD image with corresponding age
                 for i, (age, td_image) in enumerate(zip(ages, td_images)):
@@ -97,7 +66,6 @@ def plot_td_values_for_patient(patients_with_many_visits):
                     axes[i].axis('off')
                     axes[i].set_title(f'Age {age:.2f}')
 
-                # Turn off any unused subplots, but only if there are fewer visits than the total number of subplots
                 if num_visits < rows * cols:
                     for i in range(num_visits, rows * cols):
                         axes[i].axis('off')
@@ -110,11 +78,7 @@ def plot_td_values_for_patient(patients_with_many_visits):
 def main():
     json_file = './alldata_pro.json'  # Path to your JSON file
     data = load_json_data(json_file)
-
-    # Find patients with more than 15 visits
     patients_with_many_visits = find_patients_with_many_visits(data)
-
-    # Plot the TD value progression for these patients
     plot_td_values_for_patient(patients_with_many_visits)
 
 if __name__ == "__main__":

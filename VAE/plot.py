@@ -52,66 +52,19 @@ def plot_hvf(original, reconstruction, epoch, batch_index, results_dir):
     plt.savefig(os.path.join(results_dir, f'comparison_epoch{epoch}_batch{batch_index}_ori.png'))
     plt.close()
 
-# def plot_all_reconstructions(originals, reconstructions, epoch, results_dir):
-#     num_cases = len(originals)
-#     num_epochs = len(reconstructions[0])
-#     fig, axes = plt.subplots(num_cases, num_epochs + 1, figsize=(22, 20))  # Plus one for the original
-#
-#     for i in range(num_cases):
-#         for e in range(num_epochs):
-#             recon_img = transform_to_image(reconstructions[i][e])
-#             axes[i, e].imshow(recon_img, cmap='gray', interpolation='none')
-#             axes[i, e].axis('off')
-#
-#         # Plot original in the last column
-#         orig_img = transform_to_image(originals[i])
-#         axes[i, num_epochs].imshow(orig_img, cmap='gray', interpolation='none')
-#         axes[i, num_epochs].axis('off')
-#
-#     plt.tight_layout()
-#     plt.savefig(os.path.join(results_dir, f'comparison_grid_epoch{epoch}.png'))
-#     plt.close()
-
-
-# def plot_all_reconstructions(originals, reconstructions, epoch, results_dir):
-#     num_cases = len(originals)
-#     num_epochs = len(reconstructions[0])
-#     fig, axes = plt.subplots(num_cases, num_epochs + 1, figsize=(22, 20))  # Plus one for the original
-#
-#     # Set titles for each subplot
-#     for e in range(num_epochs):
-#         axes[0, e].set_title(f'Epoch {e+1}')
-#     axes[0, num_epochs].set_title('Original')
-#
-#     for i in range(num_cases):
-#         for e in range(num_epochs):
-#             recon_img = transform_to_image(reconstructions[i][e])
-#             axes[i, e].imshow(recon_img, cmap='gray', interpolation='none')
-#             axes[i, e].axis('off')
-#
-#         # Plot original in the last column
-#         orig_img = transform_to_image(originals[i])
-#         axes[i, num_epochs].imshow(orig_img, cmap='gray', interpolation='none')
-#         axes[i, num_epochs].axis('off')
-#
-#     plt.tight_layout()
-#     plt.savefig(os.path.join(results_dir, f'comparison_grid_epoch{epoch}.png'))
-#     plt.close()
-
 def plot_all_reconstructions(originals, reconstructions, epoch, results_dir):
     num_cases = len(originals)
     num_epochs = len(reconstructions[0])
 
     # Create a subplot with epochs as rows and cases as columns, plus one row for the original
     fig, axes = plt.subplots(num_epochs + 1, num_cases,
-                             figsize=(num_cases * 2, num_epochs * 2 + 2))  # Adjust figsize accordingly
+                             figsize=(num_cases * 2, num_epochs * 2 + 2))
 
     # Loop over each case
     for j in range(num_cases):
-        # Plot each epoch in a separate row
         for i in range(num_epochs):
             recon_img = transform_to_image(reconstructions[j][i])
-            if i == 0:  # Set column titles at the top
+            if i == 0:
                 axes[i, j].set_title(f'Case {j + 1}')
             axes[i, j].imshow(recon_img, cmap='gray', interpolation='none')
             axes[i, j].axis('off')
@@ -141,7 +94,7 @@ def plot_samples(sampled_data, results_dir='results_vae_samples'):
             ax.set_title(f'Sample {i + 1}')
             ax.axis('off')
         else:
-            ax.axis('off')  # Turn off axis for empty plots
+            ax.axis('off')
 
     plt.tight_layout()
     plt.savefig(os.path.join(results_dir, 'vae_samples.png'))

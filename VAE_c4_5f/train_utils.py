@@ -7,19 +7,6 @@ from config import init_mask
 import numpy as np
 
 
-# def compute_mmd(z, z_prior, kernel_bandwidth=2.0):
-#     # Compute pairwise distances
-#     z_dist = torch.cdist(z, z)
-#     z_prior_dist = torch.cdist(z_prior, z_prior)
-#     cross_dist = torch.cdist(z, z_prior)
-#
-#     # Apply Gaussian Kernel
-#     mmd = torch.exp(-z_dist ** 2 / kernel_bandwidth).mean()
-#     mmd += torch.exp(-z_prior_dist ** 2 / kernel_bandwidth).mean()
-#     mmd -= 2 * torch.exp(-cross_dist ** 2 / kernel_bandwidth).mean()
-#
-#     return mmd
-
 def compute_kernel(x, y, sigma_sqr=1):
     x_size = x.shape[0]
     y_size = y.shape[0]
