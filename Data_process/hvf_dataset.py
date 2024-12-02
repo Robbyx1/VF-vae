@@ -40,8 +40,12 @@ class HVFDataset(Dataset):
         all_sequences = torch.stack(self.sequences)
         glo_var.global_min = all_sequences.min(dim=0)[0]  # Min for each of the 52 points
         glo_var.global_max = all_sequences.max(dim=0)[0]
+        self.global_min_value = all_sequences.min()
+        self.global_max_value = all_sequences.max()
         # print(f"Global min calculated: {glo_var.global_min}")
         # print(f"Global max calculated: {glo_var.global_max}")
+        print(f"Single Global Min Value: {self.global_min_value}")
+        print(f"Single Global Max Value: {self.global_max_value}")
 
     def __len__(self):
         return len(self.sequences)
@@ -63,6 +67,8 @@ if __name__ == "__main__":
             print(f"Sequence {i + 1} (normalized):", data)
 
         # Print global min and max values for validation
-        print("Global min calculated:", glo_var.global_min)
-        print("Global max calculated:", glo_var.global_max)
+        # print("Global min calculated:", glo_var.global_min)
+        # print("Global max calculated:", glo_var.global_max)
+        print("Single global min value:", dataset.global_min_value)
+        print("Single global max value:", dataset.global_max_value)
 
