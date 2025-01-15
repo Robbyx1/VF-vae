@@ -257,53 +257,54 @@ def main():
     data = load_json_data(json_file)
     output_csv_path = "./patient_decomposed_all_python.csv"
     process_and_save_all_data(data, archetype_matrix, output_csv_path)
-    top_td_by_type = find_top_td_seq_by_type(data)
-    sorted_results = dict(sorted(top_td_by_type.items(), key=lambda x: int(x[0])))
-    flatten_values = [np.array(td_seq) for _, (_, td_seq) in sorted_results.items()]
-    min_val_arch = np.min(archetype_matrix)
-    max_val_arch = np.max(archetype_matrix)
-    min_d = -37.69
-    max_d = 22.69
-    print(f"Min value in archetype matrix: {min_val_arch}")
-    print(f"Max value in archetype matrix: {max_val_arch}")
-    print(f"Min value in data: {min_d}")
-    print(f"Max value in data: {max_d}")
-    normalized_values = [(values - min_d) / (max_d - min_d) for values in flatten_values]
-    scaled_values = [
-        values * (max_val_arch - min_val_arch) + min_val_arch for values in normalized_values
-    ]
-    # for i, normalized in enumerate(normalized_values):
-    #     print(f"Normalized values for set {i}: {normalized}")
-    #     print(f"Range: Min = {np.min(normalized)}, Max = {np.max(normalized)}")
-    flatten_values = scaled_values
-    # for visit_type, (highest_value, td_seq) in sorted_results.items():
-    #     print(f"Type: {visit_type}")
-    #     print(f"  HighestDecomposedValue: {highest_value}")
-    #     print(f"  td_seq: {td_seq}")
 
-    aa = arch.AA(n_archetypes=17)
-    aa.archetypes_ = archetype_matrix
-    # print("Loaded Archetypes Shape:", aa.archetypes_.shape)
-
-    processed_results = process_sorted_results(flatten_values, aa)
-    # coefficients_list = [result['DecompositionCoefficients'].flatten() for result in processed_results.values()]
-    coefficients_list = processed_results
-    print("Processed Results:")
-    for i, result in enumerate(processed_results):
-        print(f"Result {i + 1}: {result}")
-    reconstructed_data = reconstruct_from_coefficients(archetype_matrix, coefficients_list)
-    # for visit_type, reconstructed in zip(processed_results.keys(), reconstructed_data):
-    #     print(f"Type: {visit_type}")
-    #     print(f"  Reconstructed Data: {reconstructed}")
-    mae_results = calculate_percentage_mae(flatten_values, reconstructed_data)
-    for i, mae in enumerate(mae_results):
-        print(f"MAE for pair {i + 1}: {mae}")
-
-    plot_all_results(flatten_values, reconstructed_data, save_path="reconstruction_comparison.png")
-    plot_images(flatten_values, reconstructed_data, max_cols=4, save_filename="python_output.png")
-    # plot_images(flatten_values,reconstructed_data)
-    # print("Decomposition Coefficients:", td_seq_transformed)
-    # print("Sum of Coefficients:", np.sum(td_seq_transformed))
+    # top_td_by_type = find_top_td_seq_by_type(data)
+    # sorted_results = dict(sorted(top_td_by_type.items(), key=lambda x: int(x[0])))
+    # flatten_values = [np.array(td_seq) for _, (_, td_seq) in sorted_results.items()]
+    # min_val_arch = np.min(archetype_matrix)
+    # max_val_arch = np.max(archetype_matrix)
+    # min_d = -37.69
+    # max_d = 22.69
+    # print(f"Min value in archetype matrix: {min_val_arch}")
+    # print(f"Max value in archetype matrix: {max_val_arch}")
+    # print(f"Min value in data: {min_d}")
+    # print(f"Max value in data: {max_d}")
+    # normalized_values = [(values - min_d) / (max_d - min_d) for values in flatten_values]
+    # scaled_values = [
+    #     values * (max_val_arch - min_val_arch) + min_val_arch for values in normalized_values
+    # ]
+    # # for i, normalized in enumerate(normalized_values):
+    # #     print(f"Normalized values for set {i}: {normalized}")
+    # #     print(f"Range: Min = {np.min(normalized)}, Max = {np.max(normalized)}")
+    # flatten_values = scaled_values
+    # # for visit_type, (highest_value, td_seq) in sorted_results.items():
+    # #     print(f"Type: {visit_type}")
+    # #     print(f"  HighestDecomposedValue: {highest_value}")
+    # #     print(f"  td_seq: {td_seq}")
+    #
+    # aa = arch.AA(n_archetypes=17)
+    # aa.archetypes_ = archetype_matrix
+    # # print("Loaded Archetypes Shape:", aa.archetypes_.shape)
+    #
+    # processed_results = process_sorted_results(flatten_values, aa)
+    # # coefficients_list = [result['DecompositionCoefficients'].flatten() for result in processed_results.values()]
+    # coefficients_list = processed_results
+    # print("Processed Results:")
+    # for i, result in enumerate(processed_results):
+    #     print(f"Result {i + 1}: {result}")
+    # reconstructed_data = reconstruct_from_coefficients(archetype_matrix, coefficients_list)
+    # # for visit_type, reconstructed in zip(processed_results.keys(), reconstructed_data):
+    # #     print(f"Type: {visit_type}")
+    # #     print(f"  Reconstructed Data: {reconstructed}")
+    # mae_results = calculate_percentage_mae(flatten_values, reconstructed_data)
+    # for i, mae in enumerate(mae_results):
+    #     print(f"MAE for pair {i + 1}: {mae}")
+    #
+    # plot_all_results(flatten_values, reconstructed_data, save_path="reconstruction_comparison.png")
+    # plot_images(flatten_values, reconstructed_data, max_cols=4, save_filename="python_output.png")
+    # # plot_images(flatten_values,reconstructed_data)
+    # # print("Decomposition Coefficients:", td_seq_transformed)
+    # # print("Sum of Coefficients:", np.sum(td_seq_transformed))
 
 
 if __name__ == "__main__":
