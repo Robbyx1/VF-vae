@@ -155,38 +155,6 @@ def plot_archetype_distribution(classification_counts, total_cases, output_dir):
     print(f"Total cases processed: {total_cases}")
 
 
-# def plot_detailed_histogram(classification_counts, stage, archetype_type, output_dir):
-#     os.makedirs(output_dir, exist_ok=True)
-#
-#     # Filter samples for the given stage and archetype type
-#     samples = [
-#         sample for sample in classification_counts[stage]
-#         if sample['Type'] == archetype_type
-#     ]
-#
-#     # Extract SecondHighestIndex for the filtered samples
-#     second_highest_indices = [sample['SecondHighestIndex'] for sample in samples]
-#
-#     # Count occurrences of each SecondHighestIndex
-#     counter = Counter(second_highest_indices)
-#     sorted_indices = sorted(counter.keys())  # Sort indices numerically
-#     counts = [counter[idx] for idx in sorted_indices]
-#
-#     # Plot the histogram
-#     plt.figure(figsize=(10, 6))
-#     plt.bar([str(idx) for idx in sorted_indices], counts, color='skyblue')
-#     plt.title(f'SecondHighestIndex Distribution for Archetype {archetype_type} in {stage.capitalize()} Stage')
-#     plt.xlabel('SecondHighestIndex')
-#     plt.ylabel('Count')
-#     plt.xticks(rotation=45, ha='right')
-#     plt.tight_layout()
-#
-#     # Save the plot
-#     output_path = os.path.join(output_dir, f'{stage}_archetype_{archetype_type}_second_highest.png')
-#     plt.savefig(output_path)
-#     plt.close()
-#
-#     print(f"Plot saved at: {output_path}")
 
 def plot_detailed_histogram(classification_counts, stage, archetype_type, output_dir):
     os.makedirs(output_dir, exist_ok=True)
@@ -321,8 +289,8 @@ def main():
 
     total_cases = sum(len(v) for v in classification_counts.values())
     print(f"Total lost cases due to unexpected format: {lost_cases_count}")
-    # output_dir = "archetype_test"
-    # plot_archetype_distribution(classification_counts, total_cases, output_dir)
+    output_dir = "archetype_test"
+    plot_archetype_distribution(classification_counts, total_cases, output_dir)
 
     output_dir = "secondary_histograms"
     plot_detailed_histogram(classification_counts, stage="mild", archetype_type=14, output_dir=output_dir)
@@ -330,10 +298,10 @@ def main():
     #
     # output_dir = "heatmaps"
     archetypes_csv = "./at17_matrix.csv"
-    # plot_archetype_heatmap(classification_counts, stage="mild", archetype_type=9, archetypes_csv=archetypes_csv,
-    #                        output_dir=output_dir)
-    # output_dir = "archetypes_heatmaps"
-    # plot_archetype_matrices(archetypes_csv, output_dir)
+    plot_archetype_heatmap(classification_counts, stage="mild", archetype_type=9, archetypes_csv=archetypes_csv,
+                           output_dir=output_dir)
+    output_dir = "archetypes_heatmaps"
+    plot_archetype_matrices(archetypes_csv, output_dir)
 
 if __name__ == "__main__":
     main()
